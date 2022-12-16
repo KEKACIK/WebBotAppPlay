@@ -1,0 +1,51 @@
+services:
+  db:
+      image: postgres:10.13
+      restart: on-failure
+      ports:
+        - "5432:5432"
+      environment:
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: test
+        POSTGRES_DB: postgres
+      volumes:
+        - ./data/postgres-data:/var/lib/postgresql/data
+  mc:
+    image: itzg/minecraft-server
+    ports:
+      - "25565:25565"
+      - "25575:25575"
+    environment:
+      MAX_MEMORY: 6G
+      MAX_PLAYERS: 2022
+      MOTD: "SERVER"
+      EULA: "TRUE"
+      TYPE: SPIGOT
+      VERSION: 1.12.2
+    restart: always
+    volumes:
+      - ./src/mc:/data
+  bot:
+    build:
+      context: ./src/bot
+      dockerfile: bot.dockerfile
+    restart: on-failure
+    env_file:
+      - .env
+    volumes:
+      - ./locales:/bot/locales
+      - ./src/bot/app:/app
+    depends_on:
+      - db
+  pgadmin:
+    image: dpage/pgadmin4:6.4
+    ports:
+      - "9002:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: test@test.com
+      PGADMIN_DEFAULT_PASSWORD: test
+    restart: on-failure
+    logging:
+      driver: none
+    depends_on:
+      - db
